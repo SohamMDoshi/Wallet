@@ -3,7 +3,6 @@ package com.swiggy.wallet;
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.entity.Wallet;
 import com.swiggy.wallet.repository.WalletRepository;
-import com.swiggy.wallet.service.WalletService;
 import com.swiggy.wallet.service.WalletServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -63,9 +62,7 @@ public class WalletServiceTest {
         assertEquals(20.0, wallet.getCurrentBalance());
 
         double withdrawAmount = 30.0;
-        assertThrows(InsufficientBalanceException.class, ()-> {
-            walletService.withdraw(1L,withdrawAmount);
-        });
+        assertThrows(InsufficientBalanceException.class, ()-> walletService.withdraw(1L,withdrawAmount));
         assertEquals(20.0,wallet.getCurrentBalance());
     }
 
