@@ -18,13 +18,13 @@ public class GlobalException {
     }
 
     @ExceptionHandler(WalletNotFoundException.class)
-    public ResponseEntity<ErrorDetails> InsufficientBalanceExceptionHandler(WalletNotFoundException exception, WebRequest request) {
+    public ResponseEntity<ErrorDetails> WalletNotFoundExceptionHandler(WalletNotFoundException exception, WebRequest request) {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), exception.getMessage(), request.getDescription(false));
         return new ResponseEntity<ErrorDetails>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(InvalidAmountException.class)
-    public ResponseEntity<ErrorDetails> InsufficientBalanceExceptionHandler(InvalidAmountException exception, WebRequest request) {
+    public ResponseEntity<ErrorDetails> InvalidAmountExceptionHandler(InvalidAmountException exception, WebRequest request) {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), exception.getMessage(), request.getDescription(false));
         return new ResponseEntity<ErrorDetails>(errorDetails, HttpStatus.BAD_REQUEST);
     }

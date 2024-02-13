@@ -1,7 +1,6 @@
 package com.swiggy.wallet.controller;
 
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
-import com.swiggy.wallet.dto.AmountDTO;
 import com.swiggy.wallet.entity.Money;
 import com.swiggy.wallet.entity.Wallet;
 import com.swiggy.wallet.service.WalletService;
