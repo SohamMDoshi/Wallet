@@ -1,28 +1,18 @@
-package com.swiggy.wallet;
+package com.swiggy.wallet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.swiggy.wallet.controller.WalletController;
-import com.swiggy.wallet.dto.AmountDTO;
-import com.swiggy.wallet.entity.Wallet;
-import com.swiggy.wallet.repository.WalletRepository;
-import com.swiggy.wallet.service.WalletService;
+import com.swiggy.wallet.entity.Currency;
+import com.swiggy.wallet.entity.Money;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import static org.mockito.Mockito.when;
+import java.math.BigDecimal;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
@@ -30,10 +20,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @SpringBootTest
 @AutoConfigureMockMvc
 public class WalletControllerTest {
-
     @Autowired
     private MockMvc mockMvc;
-
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -41,8 +29,8 @@ public class WalletControllerTest {
     @Test
     public void testDeposit() throws Exception {
         mockMvc.perform(post("/wallet/")).andExpect(MockMvcResultMatchers.status().isCreated());
-        AmountDTO amountDTO = new AmountDTO(50.0);
-        String requestBody = objectMapper.writeValueAsString(amountDTO);
+        Money depositAmount = new Money(new BigDecimal("50"), Currency.USD);
+        String requestBody = objectMapper.writeValueAsString(depositAmount);
 
         mockMvc.perform(put("/wallet/deposit/1")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -53,16 +41,16 @@ public class WalletControllerTest {
     @Test
     public void testWithdraw() throws Exception {
         mockMvc.perform(post("/wallet/")).andExpect(MockMvcResultMatchers.status().isCreated());
-        AmountDTO amountDTO = new AmountDTO(50.0);
-        String requestBody = objectMapper.writeValueAsString(amountDTO);
+        Money depositAmount = new Money(new BigDecimal("50"), Currency.USD);
+        String requestBody = objectMapper.writeValueAsString(depositAmount);
 
         mockMvc.perform(put("/wallet/deposit/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(MockMvcResultMatchers.status().isOk());
 
-        AmountDTO amountDTO1 = new AmountDTO(10.0);
-        String requestBody1 = objectMapper.writeValueAsString(amountDTO1);
+        Money withdrawAmount = new Money(new BigDecimal("5"), Currency.EUR);
+        String requestBody1 = objectMapper.writeValueAsString(withdrawAmount);
 
         mockMvc.perform(put("/wallet/withdraw/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -73,8 +61,8 @@ public class WalletControllerTest {
     @Test
     public void testWithdrawMoreThanBalance_ExpectBadRequest() throws Exception {
         mockMvc.perform(post("/wallet/")).andExpect(MockMvcResultMatchers.status().isCreated());
-        AmountDTO amountDTO = new AmountDTO(50.0);
-        String requestBody = objectMapper.writeValueAsString(amountDTO);
+        Money withdrawAmount = new Money(new BigDecimal("5"), Currency.EUR);
+        String requestBody = objectMapper.writeValueAsString(withdrawAmount);
 
         mockMvc.perform(put("/wallet/withdraw/1")
                         .contentType(MediaType.APPLICATION_JSON)

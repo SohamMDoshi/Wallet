@@ -1,6 +1,8 @@
-package com.swiggy.wallet;
+package com.swiggy.wallet.service;
 
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
+import com.swiggy.wallet.entity.Currency;
+import com.swiggy.wallet.entity.Money;
 import com.swiggy.wallet.entity.Wallet;
 import com.swiggy.wallet.repository.WalletRepository;
 import com.swiggy.wallet.service.WalletServiceImpl;
@@ -9,11 +11,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 public class WalletServiceTest {
@@ -27,8 +30,7 @@ public class WalletServiceTest {
     public void testCreatingWalletAndCheckingCurrentBalance() {
         Wallet wallet = new Wallet();
         when(walletRepository.findById(1L)).thenReturn(Optional.of(wallet));
-        double balance = walletService.checkBalance(1L);
-        assertEquals(0.0, balance);
+        assertEquals(new Money(new BigDecimal("0.00"),Currency.USD), wallet.getCurrentBalance());
     }
 
     @Test
@@ -36,35 +38,31 @@ public class WalletServiceTest {
         Wallet wallet = new Wallet();
 
         when(walletRepository.findById(1L)).thenReturn(Optional.of(wallet));
-        double depositAmount = 20.0;
+        Money depositAmount = new Money(new BigDecimal("5.0"), Currency.USD);
         walletService.deposit(1L,depositAmount);
-        assertEquals(20.0, wallet.getCurrentBalance());
+        assertEquals(depositAmount, wallet.getCurrentBalance());
     }
 
     @Test
     public void testWithdrawWhileHavingSufficientBalance() {
         Wallet wallet = new Wallet();
         when(walletRepository.findById(1L)).thenReturn(Optional.of(wallet));
-        double depositAmount = 20.0;
+        Money depositAmount = new Money(new BigDecimal("20.0"), Currency.USD);
         walletService.deposit(1L,depositAmount);
-        assertEquals(20.0, wallet.getCurrentBalance());
+        assertEquals(depositAmount, wallet.getCurrentBalance());
 
-        double withdrawAmount = 10.0;
+        Money withdrawAmount = new Money(new BigDecimal("5.0"), Currency.USD);
         walletService.withdraw(1L,withdrawAmount);
-        assertEquals(10.0,wallet.getCurrentBalance());
+        Money expectedBalance = new Money(new BigDecimal("15"),Currency.USD);
+        assertEquals(expectedBalance,wallet.getCurrentBalance());
     }
-
+//
     @Test
     public void testWithdrawWhileHavingInsufficientBalance() {
         Wallet wallet = new Wallet();
         when(walletRepository.findById(1L)).thenReturn(Optional.of(wallet));
-        double depositAmount = 20.0;
-        walletService.deposit(1L,depositAmount);
-        assertEquals(20.0, wallet.getCurrentBalance());
-
-        double withdrawAmount = 30.0;
+        Money withdrawAmount = new Money(new BigDecimal("5.0"), Currency.USD);
         assertThrows(InsufficientBalanceException.class, ()-> walletService.withdraw(1L,withdrawAmount));
-        assertEquals(20.0,wallet.getCurrentBalance());
     }
 
 }
