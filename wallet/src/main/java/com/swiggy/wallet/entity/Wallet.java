@@ -5,8 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.Data;
+import lombok.Getter;
 
-
+@Data
 @Entity
 public class Wallet {
     @Id
@@ -17,10 +19,6 @@ public class Wallet {
 
     public Wallet() {
         this.currentBalance = 0.0;
-    }
-
-    public double getCurrentBalance() {
-        return currentBalance;
     }
 
     public void deposit(double amount) {

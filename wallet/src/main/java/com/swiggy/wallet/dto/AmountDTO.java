@@ -1,7 +1,13 @@
 package com.swiggy.wallet.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 public class AmountDTO {
-    private final double amount;
+    private double amount;
+
+    public AmountDTO() {}
 
     public AmountDTO(double amount) {
         this.amount = amount;

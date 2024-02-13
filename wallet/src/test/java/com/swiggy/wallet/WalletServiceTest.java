@@ -34,6 +34,7 @@ public class WalletServiceTest {
     @Test
     public void testDeposit() {
         Wallet wallet = new Wallet();
+
         when(walletRepository.findById(1L)).thenReturn(Optional.of(wallet));
         double depositAmount = 20.0;
         walletService.deposit(1L,depositAmount);
