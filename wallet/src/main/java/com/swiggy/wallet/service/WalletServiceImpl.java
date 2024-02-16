@@ -1,15 +1,17 @@
 package com.swiggy.wallet.service;
 
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
+import com.swiggy.wallet.Expection.UserNotFoundException;
 import com.swiggy.wallet.Expection.WalletNotFoundException;
-import com.swiggy.wallet.entity.Currency;
+import com.swiggy.wallet.entity.Users;
 import com.swiggy.wallet.entity.Money;
 import com.swiggy.wallet.entity.Wallet;
+import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class WalletServiceImpl implements WalletService{
@@ -17,26 +19,37 @@ public class WalletServiceImpl implements WalletService{
     @Autowired
     private WalletRepository walletRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @Override
-    public Wallet createWallet() {
-        Wallet wallet = new Wallet();
-        wallet.setCurrentBalance(new Money(new BigDecimal("0.00"), Currency.USD));
+    public Wallet createWallet(Long userID) {
+        Users users = userRepository.findById(userID).orElseThrow(() -> new UserNotFoundException("Users not found with id "+ userID));
+        Wallet wallet = new Wallet(users);
         return walletRepository.save(wallet);
     }
 
     @Override
-    public void deposit(Long walletId, Money money) {
-        Wallet wallet = walletRepository.findById(walletId)
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with id "+walletId));
+    public Wallet deposit(Long userID, Money money) {
+        Users users = userRepository.findById(userID).orElseThrow(() -> new UserNotFoundException("Users not found with id "+ userID));
+        Wallet wallet = users.getWallet();
+        if (wallet == null) throw new WalletNotFoundException("Wallet not found for users with id: " + userID);
         wallet.deposit(money);
-        walletRepository.save(wallet);
+        return walletRepository.save(wallet);
     }
 
     @Override
-    public void withdraw(Long walletId, Money money) throws InsufficientBalanceException {
-        Wallet wallet = walletRepository.findById(walletId)
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with id "+walletId));
+    public Wallet withdraw(Long userID, Money money) throws InsufficientBalanceException {
+        Users users = userRepository.findById(userID).orElseThrow(() -> new UserNotFoundException("Users not found with id "+ userID));
+        Wallet wallet = users.getWallet();
+        if (wallet == null) throw new WalletNotFoundException("Wallet not found for users with id: " + userID);
         wallet.withdraw(money);
-        walletRepository.save(wallet);
+        return walletRepository.save(wallet);
+    }
+
+    @Override
+    public List<Wallet> getAllWallets() {
+        List<Wallet> walletList = walletRepository.findAll();
+        return walletList;
     }
 }

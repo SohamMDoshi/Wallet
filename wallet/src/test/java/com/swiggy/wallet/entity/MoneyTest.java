@@ -1,12 +1,18 @@
 package com.swiggy.wallet.entity;
 
+import com.swiggy.wallet.Expection.InvalidAmountException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MoneyTest {
+
+    @Test
+    public void testCreatingMoneyWithNegativeValue_ExpectException() {
+        assertThrows(InvalidAmountException.class, () -> new Money(new BigDecimal("-5.0"),Currency.USD));
+    }
 
     @Test
     public void testAddingTwoMoneyWithBaseCurrency() {
