@@ -2,12 +2,16 @@ package com.swiggy.wallet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
+import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.entity.Currency;
 import com.swiggy.wallet.entity.Money;
+import com.swiggy.wallet.entity.Users;
 import com.swiggy.wallet.entity.Wallet;
+import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.repository.WalletRepository;
 import com.swiggy.wallet.service.WalletService;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,55 +47,75 @@ public class WalletControllerTest {
     @MockBean
     private WalletRepository walletRepository;
 
-
     @Autowired
     private ObjectMapper objectMapper;
 
+    @MockBean
+    private UserRepository userRepository;
+
     @Test
     public void testDeposit() throws Exception {
+        Users user = new Users();
+        user.setId(1L);
+        when(userRepository.findByUsername(anyString())).thenReturn(user);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
         Money depositAmount = new Money(new BigDecimal("50"), Currency.USD);
         String requestBody = objectMapper.writeValueAsString(depositAmount);
 
-        Wallet expectedWalletResponse = new Wallet(1L, depositAmount);
-        String responseBody = objectMapper.writeValueAsString(expectedWalletResponse);
+        Wallet expectedWalletResponse = new Wallet(user);
+        expectedWalletResponse.setId(1L);
+        expectedWalletResponse.setCurrentBalance(depositAmount);
+        expectedWalletResponse.setUsers(user);
+        TransactionResponse expectedResponse = new TransactionResponse("Amount Deposited Successfully", new BigDecimal("50.00"));
+        String responseBody = objectMapper.writeValueAsString(expectedResponse);
 
-        when(walletService.deposit(1L,depositAmount)).thenReturn(expectedWalletResponse);
+        when(walletService.deposit(eq(1L), any(Money.class))).thenReturn(expectedWalletResponse);
 
-        mockMvc.perform(put("/wallet/1/deposit")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
-                .andExpect(status().isOk())
-                .andExpect(content().json(responseBody));
-
-        verify(walletService,times(1)).deposit(1L,depositAmount);
-    }
-
-    @Test
-    public void testWithdraw() throws Exception {
-        Wallet originalWallet = new Wallet(1L, new Money(new BigDecimal("100.0"), Currency.USD));
-        when(walletRepository.findById(eq(1L))).thenReturn(Optional.of(originalWallet));
-
-        Wallet updatedWallet = new Wallet(1L, new Money(new BigDecimal("95.0"), Currency.USD)); // Assuming $5 is withdrawn
-        when(walletService.withdraw(eq(1L), any(Money.class))).thenReturn(updatedWallet);
-
-        // Withdrawal amount
-        Money withdrawalAmount = new Money(new BigDecimal("5.0"), Currency.USD);
-        String requestBody = objectMapper.writeValueAsString(withdrawalAmount);
-
-        // Perform API request and verify response
-        mockMvc.perform(put("/wallet/1/withdraw")
+        mockMvc.perform(put("/wallets/deposit")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(objectMapper.writeValueAsString(updatedWallet)));
+                .andExpect(content().json(responseBody));
 
-        verify(walletService,times(1)).withdraw(1L,withdrawalAmount);
+        verify(walletService, times(1)).deposit(anyLong(), any(Money.class));
+    }
+
+
+    @Test
+    public void testWithdraw() throws Exception {
+        Users user = new Users();
+        user.setId(1L);
+        when(userRepository.findByUsername(anyString())).thenReturn(user);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        Money withdrawAmount = new Money(new BigDecimal("50"), Currency.USD);
+        String requestBody = objectMapper.writeValueAsString(withdrawAmount);
+
+        Wallet expectedWalletResponse = new Wallet(user);
+        expectedWalletResponse.setId(1L);
+        expectedWalletResponse.setCurrentBalance(withdrawAmount);
+        expectedWalletResponse.setUsers(user);
+        TransactionResponse expectedResponse = new TransactionResponse("Amount withdraw Successfully", new BigDecimal("50.00"));
+        String responseBody = objectMapper.writeValueAsString(expectedResponse);
+
+        when(walletService.withdraw(eq(1L), any(Money.class))).thenReturn(expectedWalletResponse);
+
+        mockMvc.perform(put("/wallets/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(content().json(responseBody));
+
+        verify(walletService, times(1)).withdraw(anyLong(), any(Money.class));
     }
 
     @Test
     public void testWithdrawMoreThanBalance_ExpectInsufficientBalanceException() throws Exception {
-        mockMvc.perform(post("/wallet/")).andExpect(status().isCreated());
+        Users user = new Users();
+        user.setId(1L);
+        when(userRepository.findByUsername(anyString())).thenReturn(user);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         Money withdrawAmount = new Money(new BigDecimal("5"), Currency.EUR);
         String requestBody = objectMapper.writeValueAsString(withdrawAmount);
@@ -99,7 +123,7 @@ public class WalletControllerTest {
         when(walletService.withdraw(eq(1L), any(Money.class)))
                 .thenThrow(new InsufficientBalanceException());
 
-        mockMvc.perform(put("/wallet/1/withdraw")
+        mockMvc.perform(put("/wallets/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isBadRequest())
@@ -111,16 +135,21 @@ public class WalletControllerTest {
 
 
     @Test
-    void testGetWallets() throws Exception {
+    void testGetAllWallets() throws Exception {
+        Users user = new Users();
+        user.setId(1L);
+        when(userRepository.findByUsername(anyString())).thenReturn(user);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
         List<Wallet> mockWallets = Arrays.asList(
-                new Wallet(1L, new Money(new BigDecimal("100.0"), Currency.USD)),
-                new Wallet(2L, new Money(new BigDecimal("50.0"), Currency.USD))
+                new Wallet(1L, new Money(new BigDecimal("100.0"), Currency.USD),user),
+                new Wallet(2L, new Money(new BigDecimal("50.0"), Currency.USD),user)
         );
         when(walletService.getAllWallets()).thenReturn(mockWallets);
 
         String expectedJsonResponse = objectMapper.writeValueAsString(mockWallets);
 
-        mockMvc.perform(get("/wallet/wallets"))
+        mockMvc.perform(get("/wallets/"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(expectedJsonResponse));

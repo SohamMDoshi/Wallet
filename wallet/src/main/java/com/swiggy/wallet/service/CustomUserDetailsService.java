@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.Optional;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
@@ -26,7 +27,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException("User not found");
         }
-        return new User(user.getUsername(), passwordEncoder().encode(user.getPassword()), Collections.emptyList());
+        return new User(user.getUsername(), user.getPassword(), Collections.emptyList());
     }
 
     @Bean
