@@ -1,40 +1,40 @@
 package com.swiggy.wallet.service;
 
 import com.swiggy.wallet.dto.TransactionResponse;
-import com.swiggy.wallet.entity.Currency;
-import com.swiggy.wallet.entity.Money;
-import com.swiggy.wallet.entity.Users;
-import com.swiggy.wallet.entity.Wallet;
+import com.swiggy.wallet.entity.*;
+import com.swiggy.wallet.repository.TransactionRepository;
 import com.swiggy.wallet.repository.UserRepository;
-import com.swiggy.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
-public class UsersTest {
+public class UsersServiceTest {
     @Mock
     private WalletService walletService;
 
     @Mock
-    private WalletRepository walletRepository;
+    private UserRepository userRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private TransactionRepository transactionRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
+
 
     @BeforeEach
     public void setUp() {
@@ -83,5 +83,32 @@ public class UsersTest {
     }
 
 
+    @Test
+    void testGetTransactionHistoriesInDateRange() {
+        Users users = Mockito.mock(Users.class);
+
+        List<TransactionHistory> transactionHistories = new ArrayList<>();
+        LocalDateTime startDate = LocalDateTime.of(2022, 1, 1, 0, 0);
+        LocalDateTime endDate = LocalDateTime.of(2022, 1, 31, 23, 59);
+
+        transactionHistories.add(new TransactionHistory(TransactionType.SENT, "otherUser1", new Money(new BigDecimal("100.00"),Currency.USD),
+                LocalDateTime.of(2022, 1, 5, 12, 0)));
+        transactionHistories.add(new TransactionHistory(TransactionType.RECEIVED, "otherUser2", new Money(new BigDecimal("50.00"),Currency.USD),
+                LocalDateTime.of(2022, 1, 15, 10, 30)));
+        transactionHistories.add(new TransactionHistory(TransactionType.SENT, "otherUser3", new Money(new BigDecimal("200.00"),Currency.USD),
+                LocalDateTime.of(2022, 1, 25, 8, 15)));
+        transactionHistories.add(new TransactionHistory(TransactionType.RECEIVED, "otherUser4", new Money(new BigDecimal("150.00"),Currency.USD),
+                LocalDateTime.of(2021, 12, 20, 14, 45)));
+        transactionHistories.add(new TransactionHistory(TransactionType.SENT, "otherUser5", new Money(new BigDecimal("75.00"),Currency.USD),
+                LocalDateTime.of(2022, 2, 10, 16, 20)));
+
+        List<TransactionHistory> expectedTransactionHistories = new ArrayList<>(transactionHistories.subList(0, 3));
+
+        when(transactionRepository.findTransactionsByUserIdAndTimestamp(users.getId(),startDate,endDate)).thenReturn(expectedTransactionHistories);
+
+        List<TransactionHistory> result = userService.getTransactionHistoriesInDateRange(users, startDate, endDate);
+
+        assertEquals(3, result.size());
+    }
 }
 

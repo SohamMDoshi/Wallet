@@ -4,14 +4,13 @@ import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.Expection.UserNotFoundException;
 import com.swiggy.wallet.Expection.WalletNotFoundException;
 import com.swiggy.wallet.dto.TransactionResponse;
-import com.swiggy.wallet.entity.Users;
-import com.swiggy.wallet.entity.Money;
-import com.swiggy.wallet.entity.Wallet;
+import com.swiggy.wallet.entity.*;
 import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -64,6 +63,17 @@ public class WalletServiceImpl implements WalletService{
         receiverWallet.deposit(transferAmount);
         walletRepository.save(receiverWallet);
         walletRepository.save(senderWallet);
+        recordTransaction(sender,receiver,transferAmount);
         return new TransactionResponse("Transferred amount successful",senderWallet.getCurrentBalance().getAmount());
+    }
+
+    @Override
+    public void recordTransaction(Users sender, Users receiver, Money transferAmount) {
+        TransactionHistory senderHistory = new TransactionHistory(TransactionType.SENT,receiver.getUsername(),transferAmount,LocalDateTime.now());
+        TransactionHistory receiverHistory = new TransactionHistory(TransactionType.RECEIVED,sender.getUsername(),transferAmount,LocalDateTime.now());
+        sender.getTransactionHistories().add(senderHistory);
+        receiver.getTransactionHistories().add(receiverHistory);
+        userRepository.save(sender);
+        userRepository.save(receiver);
     }
 }

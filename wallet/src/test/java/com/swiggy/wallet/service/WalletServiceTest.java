@@ -2,10 +2,7 @@ package com.swiggy.wallet.service;
 
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.dto.TransactionResponse;
-import com.swiggy.wallet.entity.Currency;
-import com.swiggy.wallet.entity.Money;
-import com.swiggy.wallet.entity.Users;
-import com.swiggy.wallet.entity.Wallet;
+import com.swiggy.wallet.entity.*;
 import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
@@ -31,6 +29,18 @@ public class WalletServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private Users sender;
+
+    @Mock
+    private Users receiver;
+
+    @Mock
+    private Wallet senderWallet;
+
+    @Mock
+    private Wallet receiverWallet;
 
     @InjectMocks
     private WalletServiceImpl walletService;
@@ -115,30 +125,29 @@ public class WalletServiceTest {
     }
 
     @Test
-    public void testTransferMoney() throws InsufficientBalanceException {
-        Users sender = new Users();
-        sender.setId(1L);
-        Wallet senderWallet = new Wallet(1L,new Money(new BigDecimal("100"), Currency.USD),sender);
-        sender.setWallet(senderWallet);
+    void testTransferMoney_SuccessfulTransfer() throws InsufficientBalanceException {
+        BigDecimal initialSenderBalance = new BigDecimal("100.00");
+        BigDecimal initialReceiverBalance = new BigDecimal("0.00");
+        Money transferAmount = new Money(new BigDecimal("50.00"), Currency.USD);
 
-        Users receiver = new Users();
-        receiver.setId(2L);
-        Wallet receiverWallet = new Wallet(receiver);
-        receiver.setWallet(receiverWallet);
+        when(sender.getWallet()).thenReturn(senderWallet);
+        when(receiver.getWallet()).thenReturn(receiverWallet);
+        when(senderWallet.getCurrentBalance()).thenReturn(new Money(new BigDecimal("50.00"), Currency.USD));
+        when(receiverWallet.getCurrentBalance()).thenReturn(transferAmount);
 
-        Money transferAmount = new Money(new BigDecimal("50"), Currency.USD);
+        when(walletRepository.save(any(Wallet.class))).thenReturn(new Wallet());
 
-        when(walletRepository.save(senderWallet)).thenReturn(senderWallet);
-        when(walletRepository.save(receiverWallet)).thenReturn(receiverWallet);
+        TransactionResponse actualResponse = walletService.transferMoney(sender, receiver, transferAmount);
 
-        TransactionResponse transactionResponse = walletService.transferMoney(sender, receiver, transferAmount);
+        verify(walletRepository, times(2)).save(any(Wallet.class));
 
-        verify(walletRepository).save(senderWallet);
-        verify(walletRepository).save(receiverWallet);
-//        assertEquals(senderWallet, updatedSenderWallet);
-//        assertEquals(sender.getWallet(), updatedSenderWallet);
-        assertEquals(receiver.getWallet().getCurrentBalance(), new Money(new BigDecimal("50"), Currency.USD));
+        BigDecimal expectedSenderBalance = initialSenderBalance.subtract(transferAmount.getAmount());
+        TransactionResponse expectedResponse = new TransactionResponse("Transferred amount successful", expectedSenderBalance);
+
+        assertEquals(expectedResponse, actualResponse);
     }
+
+
 
     @Test
     public void testGetAllWallets() {
@@ -150,5 +159,19 @@ public class WalletServiceTest {
 
         assertEquals(wallets.size(), result.size());
         verify(walletRepository,times(1)).findAll();
+    }
+
+    @Test
+    void testTransferAmountAndRecordTransaction() throws Exception {
+        Users sender = mock(Users.class);
+        Users receiver = mock(Users.class);
+
+        when(userRepository.save(sender)).thenReturn(sender);
+        when(userRepository.save(receiver)).thenReturn(receiver);
+
+        walletService.recordTransaction(sender, receiver, new Money(new BigDecimal("50.00"), Currency.USD));
+
+        verify(userRepository, times(1)).save(sender);
+        verify(userRepository, times(1)).save(receiver);
     }
 }

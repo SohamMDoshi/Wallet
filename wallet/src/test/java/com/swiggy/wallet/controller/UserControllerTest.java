@@ -138,6 +138,16 @@ class UserControllerTest {
         verify(userService, times(1)).transferAmount(user, requestBody.getReceiverUsername(), requestBody.getMoney());
     }
 
+    @Test
+    @WithMockUser(username = "testUser")
+    void testGettingTransactionHistory() throws Exception {
+        Users user = new Users("testUser","password");
+        user.setId(1L);
+        TransferAmountRequestBody requestBody = new TransferAmountRequestBody("receiverUser", new Money(BigDecimal.TEN, Currency.USD));
+
+        verify(userService, times(1)).transferAmount(user, requestBody.getReceiverUsername(), requestBody.getMoney());
+    }
+
 
 }
 

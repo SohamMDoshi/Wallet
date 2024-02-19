@@ -5,12 +5,18 @@ import com.swiggy.wallet.Expection.UserAlreadyExistsException;
 import com.swiggy.wallet.Expection.UserNotFoundException;
 import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.entity.Money;
+import com.swiggy.wallet.entity.TransactionHistory;
 import com.swiggy.wallet.entity.Users;
+import com.swiggy.wallet.repository.TransactionRepository;
 import com.swiggy.wallet.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -20,6 +26,9 @@ public class UserServiceImpl implements UserService{
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
 
     public static PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -44,10 +53,22 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
+    public List<TransactionHistory> transactionHistory(Users users) {
+        return users.getTransactionHistories();
+    }
+
+    @Override
     public String deleteUser(Users users) throws UserNotFoundException {
         if(userRepository.findByUsername(users.getUsername()) == null)
             throw new UserNotFoundException("User not found with username "+users.getUsername());
         userRepository.delete(users);
         return "User got deleted successfully";
     }
+
+    @Override
+    public List<TransactionHistory> getTransactionHistoriesInDateRange(Users users,LocalDateTime startDate, LocalDateTime endDate) {
+
+        return transactionRepository.findTransactionsByUserIdAndTimestamp(users.getId(), startDate,endDate);
+    }
+
 }
