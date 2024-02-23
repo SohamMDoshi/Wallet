@@ -3,7 +3,6 @@ package com.swiggy.wallet.service;
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.Expection.UserNotFoundException;
 import com.swiggy.wallet.Expection.WalletNotFoundException;
-import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.entity.*;
 import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.repository.WalletRepository;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class WalletServiceImpl implements WalletService{
@@ -24,56 +24,33 @@ public class WalletServiceImpl implements WalletService{
 
     @Override
     public Wallet createWallet(Long userID) {
-        Users users = userRepository.findById(userID).orElseThrow(() -> new UserNotFoundException("Users not found with id "+ userID));
-        Wallet wallet = new Wallet(users);
+        Users user = userRepository.findById(userID).orElseThrow(() -> new UserNotFoundException("Users not found with id "+ userID));
+        Wallet wallet = new Wallet(user);
         return walletRepository.save(wallet);
     }
 
     @Override
-    public Wallet deposit(Long userID, Money money) {
-        Users users = userRepository.findById(userID).orElseThrow(() -> new UserNotFoundException("Users not found with id "+ userID));
-        Wallet wallet = users.getWallet();
-        if (wallet == null) throw new WalletNotFoundException("Wallet not found for users with id: " + userID);
+    public Wallet deposit(Long walletId, Money money) {
+        Wallet wallet = walletRepository.findById(walletId).orElseThrow(() ->
+                new WalletNotFoundException("Wallet not found with id: " + walletId));
         wallet.deposit(money);
         return walletRepository.save(wallet);
     }
 
     @Override
-    public Wallet withdraw(Long userID, Money money) throws InsufficientBalanceException {
-        Users users = userRepository.findById(userID).orElseThrow(() -> new UserNotFoundException("Users not found with id "+ userID));
-        Wallet wallet = users.getWallet();
-        if (wallet == null) throw new WalletNotFoundException("Wallet not found for users with id: " + userID);
-        wallet.withdraw(money);
+    public Wallet withdraw(Long walletId, Money money) throws InsufficientBalanceException {
+        Wallet wallet = walletRepository.findById(walletId).orElseThrow(() ->
+                new WalletNotFoundException("Wallet not found for users with id: " + walletId));
+        try {
+            wallet.withdraw(money);
+        }catch (InsufficientBalanceException e) {throw new InsufficientBalanceException();}
         return walletRepository.save(wallet);
     }
 
     @Override
-    public List<Wallet> getAllWallets() {
-        List<Wallet> walletList = walletRepository.findAll();
-        return walletList;
+    public Set<Wallet> getAllWallets(Long userId) {
+        return walletRepository.findAllWallets(userId);
     }
 
-    @Override
-    public TransactionResponse transferMoney(Users sender, Users receiver, Money transferAmount) throws InsufficientBalanceException {
-        Wallet senderWallet = sender.getWallet();
-        try{
-            senderWallet.withdraw(transferAmount);
-        }catch (InsufficientBalanceException e) {throw new InsufficientBalanceException();}
-        Wallet receiverWallet = receiver.getWallet();
-        receiverWallet.deposit(transferAmount);
-        walletRepository.save(receiverWallet);
-        walletRepository.save(senderWallet);
-        recordTransaction(sender,receiver,transferAmount);
-        return new TransactionResponse("Transferred amount successful",senderWallet.getCurrentBalance().getAmount());
-    }
 
-    @Override
-    public void recordTransaction(Users sender, Users receiver, Money transferAmount) {
-        TransactionHistory senderHistory = new TransactionHistory(TransactionType.SENT,receiver.getUsername(),transferAmount,LocalDateTime.now());
-        TransactionHistory receiverHistory = new TransactionHistory(TransactionType.RECEIVED,sender.getUsername(),transferAmount,LocalDateTime.now());
-        sender.getTransactionHistories().add(senderHistory);
-        receiver.getTransactionHistories().add(receiverHistory);
-        userRepository.save(sender);
-        userRepository.save(receiver);
-    }
 }

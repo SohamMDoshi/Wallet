@@ -2,8 +2,11 @@ package com.swiggy.wallet.entity;
 
 import com.swiggy.wallet.Expection.InvalidAmountException;
 import com.swiggy.wallet.Expection.OperationNotPossible;
+import com.swiggy.wallet.customValidation.ValidCurrencyValue;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,37 +17,38 @@ import java.math.RoundingMode;
 @NoArgsConstructor
 public class Money {
 
+    @NotNull(message = "amount is required")
     private BigDecimal amount;
     @Enumerated(EnumType.STRING)
-    private Currency currency = Currency.USD;
+
+    @ValidCurrencyValue
+    @NotNull(message = "currency is required")
+    private Currency currency;
 
     public Money (BigDecimal amount, Currency currency) {
         if(amount.compareTo(BigDecimal.ZERO) < 0) throw new InvalidAmountException();
-        BigDecimal conversionRate = currency.getConversionRateTOUSD();
-        this.amount = amount.multiply(conversionRate).setScale(2, RoundingMode.HALF_UP);
+        this.amount = amount;
+        this.currency = currency;
     }
 
-    public void add(Money money) {
-        if(money.getAmount().compareTo(BigDecimal.ZERO) < 0) throw new InvalidAmountException();
-        if (!currency.equals(money.getCurrency())) {
-            BigDecimal conversionRate = money.getCurrency().getConversionRateTOUSD();
-            BigDecimal amountInUSD = money.getAmount().multiply(conversionRate);
-            amount = amount.add(amountInUSD).setScale(2, RoundingMode.HALF_UP);
+    public void add(Money money, Currency baseCurrency) {
+        if (money.getAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new InvalidAmountException();
         }
-        else amount = amount.add(money.getAmount()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal amountInBase = money.getCurrency().convertToBase(money.getAmount(), baseCurrency);
+        this.amount = this.amount.add(amountInBase).setScale(2, RoundingMode.HALF_UP);
     }
 
-    public void minus(Money money) {
-        if(money.getAmount().compareTo(BigDecimal.ZERO) < 0) throw new InvalidAmountException();
-        if (!currency.equals(money.getCurrency())) {
-            BigDecimal conversionRate = money.getCurrency().getConversionRateTOUSD();
-            BigDecimal amountInUSD = money.getAmount().multiply(conversionRate);
-            if(amount.compareTo(amountInUSD) < 0) throw new OperationNotPossible();
-            else amount = amount.subtract(amountInUSD).setScale(2, RoundingMode.HALF_UP);
+    public void minus(Money money, Currency baseCurrency) {
+        if (money.getAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new InvalidAmountException();
         }
-        else {
-            if(amount.compareTo(money.getAmount()) < 0) throw new OperationNotPossible();
-            else amount = amount.subtract(money.getAmount()).setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal amountInBase = money.getCurrency().convertToBase(money.getAmount(), baseCurrency);
+        if (this.amount.compareTo(amountInBase) < 0) {
+            throw new OperationNotPossible();
+        } else {
+            this.amount = this.amount.subtract(amountInBase).setScale(2, RoundingMode.HALF_UP);
         }
     }
 }

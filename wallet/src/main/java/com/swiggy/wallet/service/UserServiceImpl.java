@@ -1,22 +1,15 @@
 package com.swiggy.wallet.service;
 
-import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.Expection.UserAlreadyExistsException;
 import com.swiggy.wallet.Expection.UserNotFoundException;
-import com.swiggy.wallet.dto.TransactionResponse;
-import com.swiggy.wallet.entity.Money;
-import com.swiggy.wallet.entity.TransactionHistory;
+import com.swiggy.wallet.entity.Country;
 import com.swiggy.wallet.entity.Users;
-import com.swiggy.wallet.repository.TransactionRepository;
+import com.swiggy.wallet.entity.Wallet;
 import com.swiggy.wallet.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -27,48 +20,32 @@ public class UserServiceImpl implements UserService{
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private TransactionRepository transactionRepository;
-
     public static PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    public Users registerUser(String username, String password)  throws UserAlreadyExistsException{
-        if(userRepository.findByUsername(username) != null) throw new UserAlreadyExistsException("User is already exits with username "+username);
-        Users users = new Users(username, password);
-        users.setPassword(passwordEncoder().encode(users.getPassword()));
-        userRepository.save(users);
-        users.setWallet(walletService.createWallet(users.getId()));
-        return userRepository.save(users);
+    @Override
+    public Users registerUser(String username, String password, Country country)  throws UserAlreadyExistsException{
+        if(userRepository.findByUsername(username).isPresent()) throw new UserAlreadyExistsException("User is already exits with username "+username);
+        Users user = new Users(username, password,country);
+        user.setPassword(passwordEncoder().encode(user.getPassword()));
+        Users updatedUser = userRepository.save(user);
+        Wallet wallet = walletService.createWallet(updatedUser.getId());
+        updatedUser.getWallets().add(wallet);
+        return updatedUser;
     }
 
     @Override
-    public TransactionResponse transferAmount(Users sender, String receiverUsername, Money transferAmount) throws InsufficientBalanceException, UserNotFoundException {
-        Users receiver = userRepository.findByUsername(receiverUsername);
-        if(receiver == null) throw new UserNotFoundException("User not found with username " + receiverUsername);
-        try{
-           return walletService.transferMoney(sender, receiver, transferAmount);
-        }catch (InsufficientBalanceException e) {throw  new InsufficientBalanceException();}
-    }
-
-    @Override
-    public List<TransactionHistory> transactionHistory(Users users) {
-        return users.getTransactionHistories();
+    public Wallet createNewWallet(Users user) {
+        Wallet wallet = walletService.createWallet(user.getId());
+        user.getWallets().add(wallet);
+        return wallet;
     }
 
     @Override
     public String deleteUser(Users users) throws UserNotFoundException {
-        if(userRepository.findByUsername(users.getUsername()) == null)
-            throw new UserNotFoundException("User not found with username "+users.getUsername());
         userRepository.delete(users);
         return "User got deleted successfully";
-    }
-
-    @Override
-    public List<TransactionHistory> getTransactionHistoriesInDateRange(Users users,LocalDateTime startDate, LocalDateTime endDate) {
-
-        return transactionRepository.findTransactionsByUserIdAndTimestamp(users.getId(), startDate,endDate);
     }
 
 }

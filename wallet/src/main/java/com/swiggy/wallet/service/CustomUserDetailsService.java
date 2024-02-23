@@ -1,5 +1,6 @@
 package com.swiggy.wallet.service;
 
+import com.swiggy.wallet.Expection.UserNotFoundException;
 import com.swiggy.wallet.entity.Users;
 import com.swiggy.wallet.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Users user = userRepository.findByUsername(username);
+        Users user = userRepository.findByUsername(username).orElseThrow(()-> new UserNotFoundException(username));
         if (user == null) {
             throw new UsernameNotFoundException("User not found");
         }

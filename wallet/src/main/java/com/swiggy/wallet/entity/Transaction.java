@@ -12,20 +12,22 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-public class TransactionHistory {
+public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
     private Long id;
     @Enumerated(EnumType.STRING)
     private TransactionType type;
+    private Long currentUserId;
     private String otherUsername;
     @Embedded
     private Money amount;
     private LocalDateTime dateTime;
 
-    public TransactionHistory(TransactionType type, String otherUsername, Money amount, LocalDateTime dateTime) {
+    public Transaction(TransactionType type,Long currentUserId, String otherUsername, Money amount, LocalDateTime dateTime) {
         this.type = type;
+        this.currentUserId = currentUserId;
         this.otherUsername = otherUsername;
         this.amount = amount;
         this.dateTime = dateTime;

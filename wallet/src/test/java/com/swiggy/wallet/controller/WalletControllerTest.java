@@ -57,7 +57,7 @@ public class WalletControllerTest {
     public void testDeposit() throws Exception {
         Users user = new Users();
         user.setId(1L);
-        when(userRepository.findByUsername(anyString())).thenReturn(user);
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         Money depositAmount = new Money(new BigDecimal("50"), Currency.USD);
@@ -86,7 +86,7 @@ public class WalletControllerTest {
     public void testWithdraw() throws Exception {
         Users user = new Users();
         user.setId(1L);
-        when(userRepository.findByUsername(anyString())).thenReturn(user);
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         Money withdrawAmount = new Money(new BigDecimal("50"), Currency.USD);
@@ -114,7 +114,7 @@ public class WalletControllerTest {
     public void testWithdrawMoreThanBalance_ExpectInsufficientBalanceException() throws Exception {
         Users user = new Users();
         user.setId(1L);
-        when(userRepository.findByUsername(anyString())).thenReturn(user);
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         Money withdrawAmount = new Money(new BigDecimal("5"), Currency.EUR);
@@ -138,7 +138,7 @@ public class WalletControllerTest {
     void testGetAllWallets() throws Exception {
         Users user = new Users();
         user.setId(1L);
-        when(userRepository.findByUsername(anyString())).thenReturn(user);
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         List<Wallet> mockWallets = Arrays.asList(

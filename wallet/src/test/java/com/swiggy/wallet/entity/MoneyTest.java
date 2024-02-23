@@ -16,10 +16,10 @@ public class MoneyTest {
 
     @Test
     public void testAddingTwoMoneyWithBaseCurrency() {
-        Money moneyOne = new Money(new BigDecimal("5.0"),Currency.USD);
+        Money moneyOne = new Money(new BigDecimal("5.00"),Currency.USD);
         Money moneyTwo = new Money(new BigDecimal("5.23"),Currency.USD);
 
-        moneyOne.add(moneyTwo);
+        moneyOne.add(moneyTwo,moneyOne.getCurrency());
         Money expectedMoney = new Money(new BigDecimal("10.23"),Currency.USD);
         assertEquals(expectedMoney,moneyOne);
     }
@@ -29,8 +29,8 @@ public class MoneyTest {
         Money moneyOne = new Money(new BigDecimal("5.0"),Currency.USD);
         Money moneyTwo = new Money(new BigDecimal("7.0"),Currency.EUR);
 
-        moneyOne.add(moneyTwo);
-        Money expectedMoney = new Money(new BigDecimal("13.40"),Currency.USD);
+        moneyOne.add(moneyTwo,moneyOne.getCurrency());
+        Money expectedMoney = new Money(new BigDecimal("12.61"),Currency.USD);
         assertEquals(expectedMoney,moneyOne);
     }
 
@@ -39,8 +39,8 @@ public class MoneyTest {
         Money moneyOne = new Money(new BigDecimal("5.0"),Currency.GBP);
         Money moneyTwo = new Money(new BigDecimal("7.0"),Currency.EUR);
 
-        moneyOne.add(moneyTwo);
-        Money expectedMoney = new Money(new BigDecimal("15.30"),Currency.USD);
+        moneyOne.add(moneyTwo,moneyOne.getCurrency());
+        Money expectedMoney = new Money(new BigDecimal("10.94"),Currency.GBP);
         assertEquals(expectedMoney,moneyOne);
     }
 }

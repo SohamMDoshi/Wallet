@@ -2,12 +2,16 @@ package com.swiggy.wallet.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.swiggy.wallet.customValidation.ValidCountryValue;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -20,22 +24,37 @@ public class Users {
     private Long id;
 
     @Column(nullable = false, unique = true)
+    @NotBlank(message = "Username is required")
     private String username;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
+    @NotBlank(message = "Password is required")
     private String password;
 
-    @OneToOne(mappedBy = "users", cascade = CascadeType.ALL)
-    private Wallet wallet;
+    @Enumerated(EnumType.STRING)
+    @NotNull(message = "Country is required")
+    @ValidCountryValue
+    private Country country;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JsonIgnore
-    private List<TransactionHistory> transactionHistories;
+    @OneToMany(mappedBy = "users", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Wallet> wallets = new HashSet<>();
 
-    public Users(String username, String password) {
+
+    public Users(String username, String password,Country country) {
         this.username = username;
         this.password = password;
+        this.country = country;
+    }
+
+
+    public Wallet getWalletWithId(Long walletId) {
+        for (Wallet wallet : wallets) {
+            if (wallet.getId().equals(walletId)) {
+                return wallet;
+            }
+        }
+        return null;
     }
 }
 
