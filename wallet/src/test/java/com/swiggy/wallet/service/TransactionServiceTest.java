@@ -82,7 +82,6 @@ public class TransactionServiceTest {
         .setConvertedAmount(50.0)
         .setCurrency("USD")
         .setServiceFee(2.0)
-        .setBaseCurrencyServiceFee(3.0)
         .build();
 
         when(userRepository.findByUsername("receiver")).thenReturn(Optional.of(receiver));
@@ -117,6 +116,6 @@ public class TransactionServiceTest {
         transactionService.recordTransaction(sender, receiver, transferAmount, 2.0);
 
         // Assert
-        // Add your assertions here
+        verify(transactionRepository,times(2)).save(any(Transaction.class));
     }
 }

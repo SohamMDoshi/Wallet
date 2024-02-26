@@ -17,5 +17,5 @@ public interface TransactionService {
 
     List<TransactionListDTO> transactionHistory(Long userId);
 
-    public List<Transaction> getTransactionHistoriesInDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate);
+    List<Transaction> getTransactionHistoriesInDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate);
 }

@@ -2,6 +2,7 @@ package com.swiggy.wallet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
+import com.swiggy.wallet.dto.TransactionListDTO;
 import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.dto.TransferAmountRequestBody;
 import com.swiggy.wallet.entity.*;
@@ -54,19 +55,20 @@ public class TransactionControllerTest {
         user.setId(1L);
         TransferAmountRequestBody requestBody = new TransferAmountRequestBody("receiverUser",2L,
                 new Money(BigDecimal.TEN, Currency.USD));
-        TransactionResponse expectedResponse = new TransactionResponse("Transferred amount successful", new Money(BigDecimal.TEN, Currency.USD));
+        TransactionResponse response = new TransactionResponse("Transferred amount successful", new Money(BigDecimal.TEN, Currency.USD));
 
         when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
 
         when(transactionService.transferAmount(user, user.getId(),requestBody.getReceiverUsername(),requestBody.getReceiverWalletId(),
-                requestBody.getMoney())).thenReturn(expectedResponse);
+                requestBody.getMoney())).thenReturn(response);
 
-        mockMvc.perform(put("/users/transfer-amount")
+        String expectedResponse = objectMapper.writeValueAsString(response);
+
+        mockMvc.perform(put("/transaction-management/users/1/wallets/1/transfer-amount")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.response").value(expectedResponse.getResponse()))
-                .andExpect(jsonPath("$.balance").value(expectedResponse.getBalance()));
+                .andExpect(content().json(expectedResponse));
 
         verify(transactionService, times(1)).transferAmount(user, user.getId(),
                 requestBody.getReceiverUsername(),requestBody.getReceiverWalletId(), requestBody.getMoney());
@@ -84,7 +86,7 @@ public class TransactionControllerTest {
         when(transactionService.transferAmount(user, user.getId(),requestBody.getReceiverUsername(),requestBody.getReceiverWalletId(),
                 requestBody.getMoney())).thenThrow(new InsufficientBalanceException());
 
-        mockMvc.perform(put("/users/transfer-amount")
+        mockMvc.perform(put("/transaction-management/users/1/wallets/1/transfer-amount")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isBadRequest())
@@ -102,16 +104,16 @@ public class TransactionControllerTest {
 
         when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
 
-        List<Transaction> response = Arrays.asList(
-                mock(Transaction.class),
-                mock(Transaction.class)
+        List<TransactionListDTO> response = Arrays.asList(
+                mock(TransactionListDTO.class),
+                mock(TransactionListDTO.class)
         );
 
         when(transactionService.transactionHistory(user.getId())).thenReturn(response);
 
         String expectedJsonResponse = objectMapper.writeValueAsString(response);
 
-        mockMvc.perform(get("/users/transfer-history"))
+        mockMvc.perform(get("/transaction-management/users/1/history"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(expectedJsonResponse));

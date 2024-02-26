@@ -17,7 +17,6 @@ message ConvertResponse {
   double converted_amount = 1;
   string currency = 2;
   double service_fee = 3;
-  double base_currency_service_fee = 4;
 }
 
 // run the build wallet module for creating proto buff auto generated file for this proto file and it will get

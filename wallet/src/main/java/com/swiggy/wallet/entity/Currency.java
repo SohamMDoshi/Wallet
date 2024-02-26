@@ -21,10 +21,7 @@ public enum Currency {
     }
 
     public BigDecimal convertToBase(BigDecimal amount, Currency baseCurrency) {
-        // Convert the amount from the currency to USD first
         BigDecimal amountInUSD = amount.divide(conversionRateToUSD, 2, RoundingMode.HALF_UP);
-
-        // Convert the amount from USD to the base currency
         return amountInUSD.multiply(baseCurrency.conversionRateToUSD).setScale(2, RoundingMode.HALF_UP);
     }
 

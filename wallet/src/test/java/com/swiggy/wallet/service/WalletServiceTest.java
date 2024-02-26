@@ -105,7 +105,6 @@ public class WalletServiceTest {
         when(walletRepository.findById(anyLong())).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-
         assertThrows(InsufficientBalanceException.class, () -> walletService.withdraw(1L, withdrawAmount));
 
         verify(walletRepository, times(1)).findById(anyLong());

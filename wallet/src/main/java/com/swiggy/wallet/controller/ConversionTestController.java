@@ -2,9 +2,7 @@ package com.swiggy.wallet.controller;
 
 import com.swiggy.wallet.dto.ConvertorRequest;
 import com.swiggy.wallet.grpcClient.CurrencyConversionClient;
-import currencyconversion.ConvertRequest;
 import currencyconversion.ConvertResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

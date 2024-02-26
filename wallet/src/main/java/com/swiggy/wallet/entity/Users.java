@@ -1,6 +1,5 @@
 package com.swiggy.wallet.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.swiggy.wallet.customValidation.ValidCountryValue;
 import jakarta.persistence.*;

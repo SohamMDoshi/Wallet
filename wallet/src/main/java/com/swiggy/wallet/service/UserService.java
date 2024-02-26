@@ -6,10 +6,10 @@ import com.swiggy.wallet.entity.*;
 
 public interface UserService {
 
-    public Users registerUser(String username, String password, Country country);
+    Users registerUser(String username, String password, Country country);
 
-    public Wallet createNewWallet(Users user);
+    Wallet createNewWallet(Users user);
 
-    public String deleteUser(Users user) throws UserNotFoundException;
+    String deleteUser(Users user) throws UserNotFoundException;
 
 }

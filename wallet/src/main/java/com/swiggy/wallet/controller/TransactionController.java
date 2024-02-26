@@ -37,8 +37,6 @@ public class TransactionController {
     private TransactionService transactionService;
 
 
-
-
     @PutMapping("/users/{userId}/wallets/{walletId}/transfer-amount")
     public ResponseEntity<TransactionResponse> transferAmount(
             @Valid @PathVariable Long userId, @PathVariable Long walletId,

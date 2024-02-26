@@ -19,11 +19,4 @@ public interface TransactionRepository extends JpaRepository<Transaction,Long> {
     @Query(value = "SELECT th.* FROM public.transaction th WHERE th.user_id = ?1", nativeQuery = true)
     List<Transaction> findByCurrentUser(Long userId);
 
-
-//    SELECT th.*
-//    FROM public.transaction_history th
-//    JOIN public.users_transaction_histories uth ON th.id = uth.transaction_histories_id
-//    WHERE uth.users_id = 1 -- Replace 1 with the desired userId
-//    AND th.date_time >= '2024-02-19T08:15:46.590762' -- Start timestamp
-//    AND th.date_time <= '2024-02-19T08:15:49.590762'; -- End timestamp
 }

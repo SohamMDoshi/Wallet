@@ -41,7 +41,6 @@ public class UsersServiceTest {
     @Test
     public void testRegisterUser() throws Exception {
         Users mockUser = new Users("testUser", "password",Country.USA);
-        //when(userRepository.findByUsername(mockUser.getUsername())).thenReturn(Optional.empty());
         when(userRepository.save(any(Users.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(walletService.createWallet(anyLong())).thenReturn(any(Wallet.class));
 

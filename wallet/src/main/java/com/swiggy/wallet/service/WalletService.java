@@ -2,12 +2,9 @@ package com.swiggy.wallet.service;
 
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.Expection.WalletNotFoundException;
-import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.entity.Money;
-import com.swiggy.wallet.entity.Users;
 import com.swiggy.wallet.entity.Wallet;
 
-import java.util.List;
 import java.util.Set;
 
 public interface WalletService {
