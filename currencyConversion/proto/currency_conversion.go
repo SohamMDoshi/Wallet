@@ -55,16 +55,13 @@ func (s *Server) ConvertCurrency(ctx context.Context, req *ConvertRequest) (*Con
 	baseRate := currencies.Rates[req.BaseCurrency]
 	targetRate := currencies.Rates[req.TargetCurrency]
 	convertedAmount := (req.Amount / baseRate) * targetRate
-	serviceFeeInTargetCurrency := math.Round(serviceFeeInUSD*targetRate*100) / 100
-	serviceFeeInBaseCurrency := math.Round(serviceFeeInUSD/baseRate*100) / 100
-	convertedAmount = convertedAmount - serviceFeeInTargetCurrency
+	serviceFee := math.Round(serviceFeeInUSD/baseRate*100) / 100
 
 	// Create and return response
 	res := &ConvertResponse{
-		ConvertedAmount:        convertedAmount,
-		Currency:               req.TargetCurrency,
-		ServiceFee:             serviceFeeInTargetCurrency,
-		BaseCurrencyServiceFee: serviceFeeInBaseCurrency,
+		ConvertedAmount: convertedAmount,
+		Currency:        req.TargetCurrency,
+		ServiceFee:      serviceFee,
 	}
 	return res, nil
 }

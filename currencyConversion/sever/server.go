@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 )
 
@@ -20,19 +19,6 @@ func main() {
 		}
 	}()
 
-	// Start HTTP server
-	router := gin.Default()
-	router.GET("/health", func(c *gin.Context) {
-		c.String(200, "health")
-	})
-
-	go func() {
-		if err := router.Run(":8081"); err != nil {
-			log.Fatalf("Failed to start HTTP server: %v", err)
-		}
-	}()
-
-	// Wait for termination signal
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	<-sigCh
