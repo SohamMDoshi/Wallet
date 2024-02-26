@@ -21,15 +21,15 @@ public class UserServiceImpl implements UserService{
     @Autowired
     private UserRepository userRepository;
 
-    public static PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    private static PasswordEncoder passwordEncoder;
 
     @Override
-    public Users registerUser(String username, String password, Country country)  throws UserAlreadyExistsException{
-        if(userRepository.findByUsername(username).isPresent()) throw new UserAlreadyExistsException("User is already exits with username "+username);
-        Users user = new Users(username, password,country);
-        user.setPassword(passwordEncoder().encode(user.getPassword()));
+    public Users registerUser(String username, String password, Country country) throws UserAlreadyExistsException {
+        if (userRepository.findByUsername(username).isPresent()) {
+            throw new UserAlreadyExistsException("User already exists with username " + username);
+        }
+        String encodedPassword = passwordEncoder.encode(password); // Encode the password
+        Users user = new Users(username, encodedPassword, country);
         Users updatedUser = userRepository.save(user);
         Wallet wallet = walletService.createWallet(updatedUser.getId());
         updatedUser.getWallets().add(wallet);
