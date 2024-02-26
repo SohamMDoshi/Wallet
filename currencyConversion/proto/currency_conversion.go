@@ -55,7 +55,7 @@ func (s *Server) ConvertCurrency(ctx context.Context, req *ConvertRequest) (*Con
 	baseRate := currencies.Rates[req.BaseCurrency]
 	targetRate := currencies.Rates[req.TargetCurrency]
 	convertedAmount := (req.Amount / baseRate) * targetRate
-	serviceFee := math.Round(serviceFeeInUSD/baseRate*100) / 100
+	serviceFee := math.Round((serviceFeeInUSD*baseRate)*100) / 100
 
 	// Create and return response
 	res := &ConvertResponse{
