@@ -24,9 +24,10 @@ public class Transaction {
     private Long userId;
     private String otherParty;
     @Embedded
-    private Money amount;
+    private Money transferAmount;
     private LocalDateTime dateTime;
 
+    @JsonIgnore
     private Double serviceFee;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -39,7 +40,7 @@ public class Transaction {
         this.type = type;
         this.userId = userId;
         this.otherParty = otherParty;
-        this.amount = amount;
+        this.transferAmount = amount;
         this.dateTime = dateTime;
         this.serviceFee = serviceFee;
     }

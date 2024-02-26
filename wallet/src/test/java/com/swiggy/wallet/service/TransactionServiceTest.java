@@ -114,7 +114,7 @@ public class TransactionServiceTest {
         );
 
         // Act
-        transactionService.recordTransaction(sender, receiver, transferAmount, 2.0, 3.0);
+        transactionService.recordTransaction(sender, receiver, transferAmount, 2.0);
 
         // Assert
         // Add your assertions here

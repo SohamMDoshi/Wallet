@@ -2,6 +2,7 @@ package com.swiggy.wallet.service;
 
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.Expection.UserNotFoundException;
+import com.swiggy.wallet.dto.TransactionListDTO;
 import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.entity.Money;
 import com.swiggy.wallet.entity.Transaction;
@@ -14,7 +15,7 @@ public interface TransactionService {
     TransactionResponse transferAmount(Users sender,Long senderWalletId, String receiverUsername, Long receiverWalletId, Money transferAmount)
             throws InsufficientBalanceException, UserNotFoundException;
 
-    List<Transaction> transactionHistory(Long userId);
+    List<TransactionListDTO> transactionHistory(Long userId);
 
     public List<Transaction> getTransactionHistoriesInDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate);
 }

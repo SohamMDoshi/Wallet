@@ -4,6 +4,7 @@ import com.swiggy.wallet.Expection.IncorrectUserException;
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.Expection.SelfTransferException;
 import com.swiggy.wallet.Expection.UserNotFoundException;
+import com.swiggy.wallet.dto.TransactionListDTO;
 import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.dto.TransferAmountRequestBody;
 import com.swiggy.wallet.entity.Transaction;
@@ -53,7 +54,7 @@ public class TransactionController {
     }
 
     @GetMapping("/users/{userId}/history")
-    public ResponseEntity<List<Transaction>> transferHistory(@PathVariable Long userId) {
+    public ResponseEntity<List<TransactionListDTO>> transferHistory(@PathVariable Long userId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Users user = userRepository.findByUsername(username).orElseThrow(()-> new UserNotFoundException(username));

@@ -5,6 +5,7 @@ import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.Expection.UserNotFoundException;
 import com.swiggy.wallet.Expection.WalletNotFoundException;
 import com.swiggy.wallet.dto.TransactionAmountDTO;
+import com.swiggy.wallet.dto.TransactionListDTO;
 import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.entity.*;
 import com.swiggy.wallet.grpcClient.CurrencyConversionClient;
@@ -17,7 +18,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,19 +54,27 @@ public class TransactionServiceImpl implements TransactionService{
         Wallet receiverWallet = walletRepository.findByUserId(receiverWalletId,receiver.getId())
                 .orElseThrow(()-> new WalletNotFoundException(receiverWalletId,receiverUsername));
 
-        try{senderWallet.withdraw(transferAmount);}catch (InsufficientBalanceException e) {throw new InsufficientBalanceException();}
-
-        grpcCurrencyConversion(sender, transferAmount, receiverWallet, receiver);
-
-        walletRepository.save(receiverWallet);
-        walletRepository.save(senderWallet);
+        if(!transferAmount.getCurrency().equals(receiverWallet.getCurrentBalance().getCurrency())) {
+            grpcCurrencyConversion(sender, senderWallet, transferAmount, receiverWallet, receiver);
+        }else {
+            try{senderWallet.withdraw(transferAmount);}catch (InsufficientBalanceException e) {throw new InsufficientBalanceException();}
+            receiverWallet.deposit(transferAmount);
+            TransactionAmountDTO amountDTO = new TransactionAmountDTO(transferAmount, transferAmount);
+            recordTransaction(sender, receiver,amountDTO,null);
+        }
         return new TransactionResponse("Transferred amount successful",senderWallet.getCurrentBalance());
     }
 
     @Override
-    public List<Transaction> transactionHistory(Long userId) {
-        return transactionRepository.findByCurrentUser(userId);
+    public List<TransactionListDTO> transactionHistory(Long userId) {
+        List<Transaction> transactions = transactionRepository.findByCurrentUser(userId);
+        List<TransactionListDTO> result = new ArrayList<>();
+        for (Transaction transaction : transactions) {
+            result.add(new TransactionListDTO(transaction));
+        }
+        return result;
     }
+
 
     @Override
     public List<Transaction> getTransactionHistoriesInDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
@@ -71,27 +82,25 @@ public class TransactionServiceImpl implements TransactionService{
     }
 
 
-    private void grpcCurrencyConversion(Users sender, Money transferAmount, Wallet receiverWallet, Users receiver) {
-        if(!transferAmount.getCurrency().equals(receiverWallet.getCurrentBalance().getCurrency())) {
+    private void grpcCurrencyConversion(Users sender,Wallet senderWallet, Money transferAmount, Wallet receiverWallet, Users receiver) {
             ConvertResponse response = conversionClient.convertCurrency(transferAmount.getCurrency().toString(), receiverWallet.getCurrentBalance().getCurrency().toString(),
                     Double.parseDouble(transferAmount.getAmount().toString()));
+
+            BigDecimal totalAmountToWithdrawFromSender = transferAmount.getAmount().add(BigDecimal.valueOf(response.getBaseCurrencyServiceFee()));
+            Money withdrawAmount = new Money(totalAmountToWithdrawFromSender,transferAmount.getCurrency());
+            try{senderWallet.withdraw(withdrawAmount);}catch (InsufficientBalanceException e) {throw new InsufficientBalanceException();}
+
             Money convertedAmount = new Money(BigDecimal.valueOf(response.getConvertedAmount()),Currency.valueOf(response.getCurrency()));
             receiverWallet.deposit(convertedAmount);
             TransactionAmountDTO amountDTO = new TransactionAmountDTO(transferAmount,convertedAmount);
-            recordTransaction(sender, receiver,amountDTO,response.getServiceFee(),response.getBaseCurrencyServiceFee());
-        }
-        else {
-            receiverWallet.deposit(transferAmount);
-            TransactionAmountDTO amountDTO = new TransactionAmountDTO(transferAmount, transferAmount);
-            recordTransaction(sender, receiver,amountDTO,null,null);
-        }
+            recordTransaction(sender, receiver,amountDTO,response.getBaseCurrencyServiceFee());
     }
 
-    public void recordTransaction(Users sender, Users receiver, TransactionAmountDTO transferAmount, Double serviceFee, Double serviceFeeInBaseCurrency) {
+    public void recordTransaction(Users sender, Users receiver, TransactionAmountDTO transferAmount, Double serviceFee) {
         Transaction senderTransaction = new Transaction(TransactionType.SENT, sender.getId(), receiver.getUsername(),
-                transferAmount.getSenderAmount(),LocalDateTime.now(),serviceFeeInBaseCurrency);
+                transferAmount.getSenderAmount(),LocalDateTime.now(),serviceFee);
         Transaction receiverTransaction = new Transaction(TransactionType.RECEIVED, receiver.getId(), sender.getUsername(),
-                transferAmount.getReceiverAmount(),LocalDateTime.now(),serviceFee);
+                transferAmount.getReceiverAmount(),LocalDateTime.now(),null);
         transactionRepository.save(senderTransaction);
         transactionRepository.save(receiverTransaction);
     }
