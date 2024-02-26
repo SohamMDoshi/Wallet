@@ -11,12 +11,12 @@ import java.util.List;
 public interface TransactionRepository extends JpaRepository<Transaction,Long> {
     @Query(value = "SELECT th.* " +
             "FROM public.transaction th " +
-            "WHERE uth.users_id = ?1 " +
+            "WHERE th.user_id = ?1 " +
             "AND th.date_time >= ?2 " +
             "AND th.date_time <= ?3", nativeQuery = true)
     List<Transaction> findTransactionsByUserIdAndTimestamp(Long userId, LocalDateTime startTime, LocalDateTime endTime);
 
-    @Query(value = "SELECT th.* FROM public.transaction th WHERE uth.users_id = ?1 ", nativeQuery = true)
+    @Query(value = "SELECT th.* FROM public.transaction th WHERE th.user_id = ?1", nativeQuery = true)
     List<Transaction> findByCurrentUser(Long userId);
 
 

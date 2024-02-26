@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.dto.TransferAmountRequestBody;
-import com.swiggy.wallet.entity.Currency;
-import com.swiggy.wallet.entity.Money;
-import com.swiggy.wallet.entity.Transaction;
-import com.swiggy.wallet.entity.Users;
+import com.swiggy.wallet.entity.*;
 import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.service.TransactionService;
 import org.junit.jupiter.api.Test;
@@ -53,11 +50,11 @@ public class TransactionControllerTest {
     @Test
     @WithMockUser(username = "testUser")
     void testTransferAmount() throws Exception {
-        Users user = new Users("testUser","password");
+        Users user = new Users("testUser","password",Country.USA);
         user.setId(1L);
         TransferAmountRequestBody requestBody = new TransferAmountRequestBody("receiverUser",2L,
                 new Money(BigDecimal.TEN, Currency.USD));
-        TransactionResponse expectedResponse = new TransactionResponse("Transferred amount successful", BigDecimal.TEN);
+        TransactionResponse expectedResponse = new TransactionResponse("Transferred amount successful", new Money(BigDecimal.TEN, Currency.USD));
 
         when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
 
@@ -78,7 +75,7 @@ public class TransactionControllerTest {
     @Test
     @WithMockUser(username = "testUser")
     void testTransferAmountWhenInsufficientBalance_ExpectedException() throws Exception {
-        Users user = new Users("testUser","password");
+        Users user = new Users("testUser","password",Country.USA);
         user.setId(1L);
         TransferAmountRequestBody requestBody = new TransferAmountRequestBody("receiverUser",2L,
                 new Money(BigDecimal.TEN, Currency.USD));
@@ -100,7 +97,7 @@ public class TransactionControllerTest {
     @Test
     @WithMockUser(username = "testUser")
     void testGettingTransactionHistory() throws Exception {
-        Users user = new Users("testUser","password");
+        Users user = new Users("testUser","password", Country.USA);
         user.setId(1L);
 
         when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));

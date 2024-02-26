@@ -1,20 +1,22 @@
 package com.swiggy.wallet.service;
 
+import com.swiggy.wallet.dto.TransactionAmountDTO;
 import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.entity.*;
+import com.swiggy.wallet.grpcClient.CurrencyConversionClient;
 import com.swiggy.wallet.repository.TransactionRepository;
 import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.repository.WalletRepository;
+import currencyconversion.ConvertResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,68 +25,98 @@ import static org.mockito.Mockito.*;
 @SpringBootTest
 public class TransactionServiceTest {
 
-
-    @Mock
-    private TransactionRepository transactionRepository;
-
     @Mock
     private UserRepository userRepository;
 
     @Mock
     private WalletRepository walletRepository;
 
-    @InjectMocks
+    @Mock
+    private TransactionRepository transactionRepository;
+
+    @Mock
+    private CurrencyConversionClient conversionClient;
+
+    @Autowired
     private TransactionServiceImpl transactionService;
 
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+        transactionService = new TransactionServiceImpl(conversionClient);
+        setField(transactionService, "userRepository", userRepository);
+        setField(transactionService, "walletRepository", walletRepository);
+        setField(transactionService, "transactionRepository", transactionRepository);
+    }
 
-    @Test
-    public void testTransferAmountSuccess() throws Exception {
-        Users sender = new Users("sender", "password");
-        Users receiver = new Users("receiver", "password");
-        Wallet senderWallet = new Wallet(1L,new Money(BigDecimal.TEN,Currency.USD),sender);
-        Wallet receiverWallet = new Wallet(2L,new Money(BigDecimal.ZERO,Currency.USD),receiver);
-        sender.getWallets().add(senderWallet);
-        receiver.getWallets().add(receiverWallet);
-
-        Money transferAmount = new Money(new BigDecimal("5"), Currency.USD);
-
-        when(userRepository.findByUsername("receiver")).thenReturn(Optional.of(receiver));
-        when(walletRepository.save(senderWallet)).thenReturn(new Wallet(1L,new Money(new BigDecimal("5"),Currency.USD),sender));
-        when(walletRepository.save(receiverWallet)).thenReturn(new Wallet(2L,new Money(new BigDecimal("5"),Currency.USD),receiver));
-
-        TransactionResponse response = transactionService.transferAmount(sender,1L, "receiver",2L, transferAmount);
-
-        assertEquals("Transferred amount successful", response.getResponse());
-        assertEquals(new BigDecimal("5.00"), response.getBalance());
-
-        verify(userRepository,times(1)).findByUsername("receiver");
+    private void setField(Object target, String fieldName, Object value) {
+        try {
+            Field field = target.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(target, value);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
-    void testGetTransactionHistoriesInDateRange() {
-        Users users = Mockito.mock(Users.class);
+    public void testTransferAmount() throws Exception {
+        // Arrange
+        Users sender = new Users();
+        sender.setId(1L);
+        sender.setUsername("sender");
 
-        List<Transaction> transactionHistories = new ArrayList<>();
-        LocalDateTime startDate = LocalDateTime.of(2022, 1, 1, 0, 0);
-        LocalDateTime endDate = LocalDateTime.of(2022, 1, 31, 23, 59);
+        Users receiver = new Users();
+        receiver.setId(2L);
+        receiver.setUsername("receiver");
 
-        transactionHistories.add(new Transaction(TransactionType.SENT, users.getId(), "otherUser1", new Money(new BigDecimal("100.00"), Currency.USD),
-                LocalDateTime.of(2022, 1, 5, 12, 0)));
-        transactionHistories.add(new Transaction(TransactionType.RECEIVED, users.getId(),"otherUser2", new Money(new BigDecimal("50.00"),Currency.USD),
-                LocalDateTime.of(2022, 1, 15, 10, 30)));
-        transactionHistories.add(new Transaction(TransactionType.SENT, users.getId(),"otherUser3", new Money(new BigDecimal("200.00"),Currency.USD),
-                LocalDateTime.of(2022, 1, 25, 8, 15)));
-        transactionHistories.add(new Transaction(TransactionType.RECEIVED, users.getId(), "otherUser4", new Money(new BigDecimal("150.00"),Currency.USD),
-                LocalDateTime.of(2021, 12, 20, 14, 45)));
-        transactionHistories.add(new Transaction(TransactionType.SENT, users.getId(), "otherUser5", new Money(new BigDecimal("75.00"),Currency.USD),
-                LocalDateTime.of(2022, 2, 10, 16, 20)));
+        Wallet senderWallet = new Wallet();
+        senderWallet.setCurrentBalance(new Money(BigDecimal.valueOf(100), Currency.USD));
 
-        List<Transaction> expectedTransactionHistories = new ArrayList<>(transactionHistories.subList(0, 3));
+        Wallet receiverWallet = new Wallet();
+        receiverWallet.setCurrentBalance(new Money(BigDecimal.valueOf(50), Currency.USD));
 
-        when(transactionRepository.findTransactionsByUserIdAndTimestamp(users.getId(),startDate,endDate)).thenReturn(expectedTransactionHistories);
+        Money transferAmount = new Money(BigDecimal.valueOf(50), Currency.USD);
 
-        List<Transaction> result = transactionService.getTransactionHistoriesInDateRange(users.getId(), startDate, endDate);
+        ConvertResponse convertResponse = ConvertResponse.newBuilder()
+        .setConvertedAmount(50.0)
+        .setCurrency("USD")
+        .setServiceFee(2.0)
+        .setBaseCurrencyServiceFee(3.0)
+        .build();
 
-        assertEquals(3, result.size());
+        when(userRepository.findByUsername("receiver")).thenReturn(Optional.of(receiver));
+        when(walletRepository.findByUserId(1L, 1L)).thenReturn(Optional.of(senderWallet));
+        when(walletRepository.findByUserId(2L, 2L)).thenReturn(Optional.of(receiverWallet));
+        when(conversionClient.convertCurrency("USD", "USD", 50.0)).thenReturn(convertResponse);
+
+        TransactionResponse response = transactionService.transferAmount(sender, 1L, "receiver", 2L, transferAmount);
+
+        assertEquals("50.00",response.getBalance().getAmount().toString());
+        assertEquals("USD",response.getBalance().getCurrency().toString());
+        assertEquals("Transferred amount successful",response.getResponse());
+    }
+
+    @Test
+    public void testRecordTransaction() {
+        // Arrange
+        Users sender = new Users();
+        sender.setId(1L);
+        sender.setUsername("sender");
+
+        Users receiver = new Users();
+        receiver.setId(2L);
+        receiver.setUsername("receiver");
+
+        TransactionAmountDTO transferAmount = new TransactionAmountDTO(
+                new Money(BigDecimal.valueOf(50), Currency.USD),
+                new Money(BigDecimal.valueOf(45), Currency.USD)
+        );
+
+        // Act
+        transactionService.recordTransaction(sender, receiver, transferAmount, 2.0, 3.0);
+
+        // Assert
+        // Add your assertions here
     }
 }

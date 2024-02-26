@@ -36,14 +36,18 @@ public class TransactionController {
     private TransactionService transactionService;
 
 
-    @PutMapping("/users/{userId}/transfer-amount")
-    public ResponseEntity<TransactionResponse> transferAmount(@Valid @PathVariable Long userId, @RequestBody TransferAmountRequestBody requestBody) throws InsufficientBalanceException, UserNotFoundException {
+
+
+    @PutMapping("/users/{userId}/wallets/{walletId}/transfer-amount")
+    public ResponseEntity<TransactionResponse> transferAmount(
+            @Valid @PathVariable Long userId, @PathVariable Long walletId,
+            @RequestBody TransferAmountRequestBody requestBody) throws InsufficientBalanceException, UserNotFoundException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Users user = userRepository.findByUsername(username).orElseThrow(()-> new UserNotFoundException(username));
         if(!Objects.equals(user.getId(), userId)) throw new IncorrectUserException(userId,username);
-        if(username.equals(requestBody.getReceiverUsername())) throw new SelfTransferException();
-        TransactionResponse response = transactionService.transferAmount(user, userId, requestBody.getReceiverUsername(),
+        if(Objects.equals(user.getId(), userId) && requestBody.getReceiverWalletId().equals(walletId)) throw new SelfTransferException();
+        TransactionResponse response = transactionService.transferAmount(user, walletId, requestBody.getReceiverUsername(),
                 requestBody.getReceiverWalletId(), requestBody.getMoney());
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
@@ -59,7 +63,7 @@ public class TransactionController {
 
     @GetMapping("/users/{userId}/history/date-range")
     public ResponseEntity<List<Transaction>> getTransactionHistoriesInDateRange(
-            @RequestParam Long userId,
+            @PathVariable Long userId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS") LocalDateTime startDate,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS") LocalDateTime endDate) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

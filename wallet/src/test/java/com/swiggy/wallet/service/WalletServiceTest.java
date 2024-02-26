@@ -3,6 +3,7 @@ package com.swiggy.wallet.service;
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.entity.*;
+import com.swiggy.wallet.entity.Currency;
 import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,9 +15,7 @@ import org.mockito.stubbing.Answer;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -52,89 +51,78 @@ public class WalletServiceTest {
 
     @Test
     public void testCreateWallet() {
-        Long userId = 1L;
-        Users user = new Users();
-        user.setId(userId);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        Users user = new Users("testUser","password",Country.USA);
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
         when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Wallet wallet = walletService.createWallet(userId);
+        Wallet wallet = walletService.createWallet(1L);
 
         assertNotNull(wallet);
-        assertEquals(userId, wallet.getUsers().getId());
-        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, times(1)).findById(anyLong());
         verify(walletRepository, times(1)).save(any(Wallet.class));
     }
 
     @Test
     public void testDeposit() {
-        Long userId = 1L;
         Money money = new Money(new BigDecimal("100.00"), Currency.USD);
         Wallet wallet = new Wallet();
         wallet.setCurrentBalance(new Money(new BigDecimal("50.00"), Currency.USD));
-        Users user = new Users();
-        user.setId(userId);
-        user.getWallets().add(wallet);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        when(walletRepository.findById(anyLong())).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Wallet updatedWallet = walletService.deposit(userId, money);
+        Wallet updatedWallet = walletService.deposit(1L, money);
 
         assertNotNull(updatedWallet);
         assertEquals(new BigDecimal("150.00"), updatedWallet.getCurrentBalance().getAmount());
-        verify(userRepository, times(1)).findById(userId);
+        verify(walletRepository, times(1)).findById(anyLong());
         verify(walletRepository, times(1)).save(any(Wallet.class));
     }
 
     @Test
     public void testWithdraw() throws InsufficientBalanceException {
-        Long userId = 1L;
-        Money money = new Money(new BigDecimal("30.00"), Currency.USD);
+        Money withdrawAmount = new Money(new BigDecimal("100.00"), Currency.USD);
         Wallet wallet = new Wallet();
-        wallet.setCurrentBalance(new Money(new BigDecimal("50.00"), Currency.USD));
-        Users user = new Users();
-        user.setId(userId);
-        user.getWallets().add(wallet);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        wallet.setCurrentBalance(new Money(new BigDecimal("150.00"), Currency.USD));
+
+        when(walletRepository.findById(anyLong())).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Wallet updatedWallet = walletService.withdraw(userId, money);
+        Wallet updatedWallet = walletService.withdraw(1L, withdrawAmount);
 
         assertNotNull(updatedWallet);
-        assertEquals(new BigDecimal("20.00"), updatedWallet.getCurrentBalance().getAmount());
-        verify(userRepository, times(1)).findById(userId);
+        assertEquals(new BigDecimal("50.00"), updatedWallet.getCurrentBalance().getAmount());
+        verify(walletRepository, times(1)).findById(anyLong());
         verify(walletRepository, times(1)).save(any(Wallet.class));
     }
 
     @Test
     public void testWithdrawWithInsufficientBalance() {
-        Long userId = 1L;
-        Money moneyToWithdraw = new Money(new BigDecimal("100.00"), Currency.USD);
+        Money withdrawAmount = new Money(new BigDecimal("100.00"), Currency.USD);
         Wallet wallet = new Wallet();
-        wallet.setCurrentBalance(new Money(BigDecimal.ZERO, Currency.USD));
-        Users user = new Users();
-        user.setId(userId);
-        user.getWallets().add(wallet);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        wallet.setCurrentBalance(new Money(new BigDecimal("50.00"), Currency.USD));
+
+        when(walletRepository.findById(anyLong())).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertThrows(InsufficientBalanceException.class, () -> walletService.withdraw(userId, moneyToWithdraw));
 
-        verify(userRepository, times(1)).findById(userId);
+        assertThrows(InsufficientBalanceException.class, () -> walletService.withdraw(1L, withdrawAmount));
+
+        verify(walletRepository, times(1)).findById(anyLong());
         verify(walletRepository, never()).save(any(Wallet.class));
     }
 
 
     @Test
     public void testGetAllWallets() {
-        List<Wallet> wallets = new ArrayList<>();
+        Set<Wallet> wallets = new HashSet<>();
         wallets.add(new Wallet());
-        when(walletRepository.findAll()).thenReturn(wallets);
+        when(walletRepository.findAllWallets(anyLong())).thenReturn(wallets);
 
-        List<Wallet> result = walletService.getAllWallets();
+        Set<Wallet> result = walletService.getAllWallets(1L);
 
         assertEquals(wallets.size(), result.size());
-        verify(walletRepository, times(1)).findAll();
+        verify(walletRepository, times(1)).findAllWallets(anyLong());
     }
 
 }

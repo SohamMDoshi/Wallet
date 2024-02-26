@@ -40,26 +40,28 @@ public class UsersServiceTest {
 
     @Test
     public void testRegisterUser() throws Exception {
-        Users mockUser = new Users("testUser", "password");
+        Users mockUser = new Users("testUser", "password",Country.USA);
         //when(userRepository.findByUsername(mockUser.getUsername())).thenReturn(Optional.empty());
-        mockUser.setId(1L);
-        when(userRepository.save(mockUser)).thenReturn(mockUser);
-        when(walletService.createWallet(mockUser.getId())).thenReturn(mock(Wallet.class));
+        when(userRepository.save(any(Users.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(walletService.createWallet(anyLong())).thenReturn(any(Wallet.class));
 
-        Users registeredUser = userService.registerUser("testUser", "password");
+        Users registeredUser = userService.registerUser("testUser", "password",Country.USA);
 
-        //verify(userRepository,times(2)).save(mockUser);
         assertEquals("testUser", registeredUser.getUsername());
         assertFalse(registeredUser.getWallets().isEmpty());
+        verify(userRepository,times(1)).save(any(Users.class));
     }
 
 
 
     @Test
     public void testDeleteUser() throws Exception {
-        Users user = new Users("testUser", "password");
-        userService.deleteUser(user);
-        verify(userRepository,times(1)).delete(user);
+        Users user = new Users("testUser", "password",Country.USA);
+        user.setId(1L);
+        String res= userService.deleteUser(user);
+
+        assertEquals("User got deleted successfully",res);
+        verify(userRepository,times(1)).deleteById(anyLong());
     }
 
 

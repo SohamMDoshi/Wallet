@@ -63,5 +63,4 @@ public class UserController {
         return new ResponseEntity<>(userService.deleteUser(user),HttpStatus.ACCEPTED);
     }
 
-
 }

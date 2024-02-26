@@ -37,7 +37,7 @@ public class Users {
     @ValidCountryValue
     private Country country;
 
-    @OneToMany(mappedBy = "users", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "users", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<Wallet> wallets = new HashSet<>();
 
 
@@ -47,14 +47,5 @@ public class Users {
         this.country = country;
     }
 
-
-    public Wallet getWalletWithId(Long walletId) {
-        for (Wallet wallet : wallets) {
-            if (wallet.getId().equals(walletId)) {
-                return wallet;
-            }
-        }
-        return null;
-    }
 }
 

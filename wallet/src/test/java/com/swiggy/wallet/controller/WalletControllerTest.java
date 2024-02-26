@@ -21,9 +21,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -67,7 +65,7 @@ public class WalletControllerTest {
         expectedWalletResponse.setId(1L);
         expectedWalletResponse.setCurrentBalance(depositAmount);
         expectedWalletResponse.setUsers(user);
-        TransactionResponse expectedResponse = new TransactionResponse("Amount Deposited Successfully", new BigDecimal("50.00"));
+        TransactionResponse expectedResponse = new TransactionResponse("Amount Deposited Successfully",depositAmount);
         String responseBody = objectMapper.writeValueAsString(expectedResponse);
 
         when(walletService.deposit(eq(1L), any(Money.class))).thenReturn(expectedWalletResponse);
@@ -96,7 +94,7 @@ public class WalletControllerTest {
         expectedWalletResponse.setId(1L);
         expectedWalletResponse.setCurrentBalance(withdrawAmount);
         expectedWalletResponse.setUsers(user);
-        TransactionResponse expectedResponse = new TransactionResponse("Amount withdraw Successfully", new BigDecimal("50.00"));
+        TransactionResponse expectedResponse = new TransactionResponse("Amount withdraw Successfully", withdrawAmount);
         String responseBody = objectMapper.writeValueAsString(expectedResponse);
 
         when(walletService.withdraw(eq(1L), any(Money.class))).thenReturn(expectedWalletResponse);
@@ -141,11 +139,10 @@ public class WalletControllerTest {
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        List<Wallet> mockWallets = Arrays.asList(
-                new Wallet(1L, new Money(new BigDecimal("100.0"), Currency.USD),user),
-                new Wallet(2L, new Money(new BigDecimal("50.0"), Currency.USD),user)
-        );
-        when(walletService.getAllWallets()).thenReturn(mockWallets);
+        Set<Wallet> mockWallets = new HashSet<>();
+        mockWallets.add(new Wallet(1L, new Money(new BigDecimal("100.0"), Currency.USD),user));
+        mockWallets.add( new Wallet(2L, new Money(new BigDecimal("50.0"), Currency.USD),user));
+        when(walletService.getAllWallets(user.getId())).thenReturn(mockWallets);
 
         String expectedJsonResponse = objectMapper.writeValueAsString(mockWallets);
 
@@ -154,7 +151,7 @@ public class WalletControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(expectedJsonResponse));
 
-        verify(walletService, times(1)).getAllWallets();
+        verify(walletService, times(1)).getAllWallets(user.getId());
     }
 
 }

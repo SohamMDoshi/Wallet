@@ -1,6 +1,7 @@
 package com.swiggy.wallet.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,17 +20,27 @@ public class Transaction {
     private Long id;
     @Enumerated(EnumType.STRING)
     private TransactionType type;
-    private Long currentUserId;
-    private String otherUsername;
+    @JsonIgnore
+    private Long userId;
+    private String otherParty;
     @Embedded
     private Money amount;
     private LocalDateTime dateTime;
 
-    public Transaction(TransactionType type,Long currentUserId, String otherUsername, Money amount, LocalDateTime dateTime) {
+    private Double serviceFee;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double getServiceFee() {
+        return serviceFee;
+    }
+
+
+    public Transaction(TransactionType type,Long userId, String otherParty, Money amount, LocalDateTime dateTime,Double serviceFee) {
         this.type = type;
-        this.currentUserId = currentUserId;
-        this.otherUsername = otherUsername;
+        this.userId = userId;
+        this.otherParty = otherParty;
         this.amount = amount;
         this.dateTime = dateTime;
+        this.serviceFee = serviceFee;
     }
 }

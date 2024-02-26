@@ -1,5 +1,6 @@
 package com.swiggy.wallet.service;
 
+import com.swiggy.wallet.Expection.CurrencyMismatchException;
 import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.Expection.UserNotFoundException;
 import com.swiggy.wallet.Expection.WalletNotFoundException;
@@ -33,6 +34,8 @@ public class WalletServiceImpl implements WalletService{
     public Wallet deposit(Long walletId, Money money) {
         Wallet wallet = walletRepository.findById(walletId).orElseThrow(() ->
                 new WalletNotFoundException("Wallet not found with id: " + walletId));
+        if(!wallet.getCurrentBalance().getCurrency().equals(money.getCurrency()))
+            throw new CurrencyMismatchException(wallet.getCurrentBalance().getCurrency().toString());
         wallet.deposit(money);
         return walletRepository.save(wallet);
     }
@@ -41,6 +44,8 @@ public class WalletServiceImpl implements WalletService{
     public Wallet withdraw(Long walletId, Money money) throws InsufficientBalanceException {
         Wallet wallet = walletRepository.findById(walletId).orElseThrow(() ->
                 new WalletNotFoundException("Wallet not found for users with id: " + walletId));
+        if(!wallet.getCurrentBalance().getCurrency().equals(money.getCurrency()))
+            throw new CurrencyMismatchException(wallet.getCurrentBalance().getCurrency().toString());
         try {
             wallet.withdraw(money);
         }catch (InsufficientBalanceException e) {throw new InsufficientBalanceException();}

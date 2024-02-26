@@ -5,10 +5,7 @@ import com.swiggy.wallet.Expection.InsufficientBalanceException;
 import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.dto.TransferAmountRequestBody;
 import com.swiggy.wallet.dto.UserRegistrationRequest;
-import com.swiggy.wallet.entity.Currency;
-import com.swiggy.wallet.entity.Money;
-import com.swiggy.wallet.entity.Transaction;
-import com.swiggy.wallet.entity.Users;
+import com.swiggy.wallet.entity.*;
 import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -50,13 +47,13 @@ class UserControllerTest {
 
     @Test
     void testRegisterUser() throws Exception {
-        UserRegistrationRequest request = new UserRegistrationRequest("testUser", "password");
+        UserRegistrationRequest request = new UserRegistrationRequest("testUser", "password", Country.USA);
         Users createdUser = new Users();
         createdUser.setId(1L);
         createdUser.setUsername(request.getUsername());
         createdUser.setPassword(request.getPassword());
 
-        when(userService.registerUser(request.getUsername(), request.getPassword())).thenReturn(createdUser);
+        when(userService.registerUser(request.getUsername(), request.getPassword(),request.getCountry())).thenReturn(createdUser);
 
         mockMvc.perform(post("/users/")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -66,13 +63,13 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.username").value(createdUser.getUsername()))
                 .andExpect(jsonPath("$.password").doesNotExist());
 
-        verify(userService, times(1)).registerUser(request.getUsername(), request.getPassword());
+        verify(userService, times(1)).registerUser(request.getUsername(), request.getPassword(),request.getCountry());
     }
 
     @Test
     @WithMockUser(username = "testUser")
     void testDeleteUser() throws Exception {
-        Users user = new Users("testUser","password");
+        Users user = new Users("testUser","password",Country.USA);
 
         when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
 
