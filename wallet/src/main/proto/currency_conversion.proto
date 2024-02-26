@@ -20,8 +20,5 @@ message ConvertResponse {
   double base_currency_service_fee = 4;
 }
 
-//    protoc \
-//    --proto_path=src/main/proto \
-//    --java_out=src/main/java \
-//    --grpc-java_out=src/main/java \
-//    src/main/proto/currency_conversion.proto
+// run the build wallet module for creating proto buff auto generated file for this proto file and it will get
+// generated inside build directory with above mentioned above package.

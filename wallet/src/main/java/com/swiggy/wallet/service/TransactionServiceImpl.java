@@ -51,37 +51,13 @@ public class TransactionServiceImpl implements TransactionService{
         Wallet receiverWallet = walletRepository.findByUserId(receiverWalletId,receiver.getId())
                 .orElseThrow(()-> new WalletNotFoundException(receiverWalletId,receiverUsername));
 
-        try{
-            senderWallet.withdraw(transferAmount);
-        }catch (InsufficientBalanceException e) {throw new InsufficientBalanceException();}
+        try{senderWallet.withdraw(transferAmount);}catch (InsufficientBalanceException e) {throw new InsufficientBalanceException();}
 
-        if(!transferAmount.getCurrency().equals(receiverWallet.getCurrentBalance().getCurrency())) {
-            ConvertResponse response = conversionClient.convertCurrency(transferAmount.getCurrency().toString(), receiverWallet.getCurrentBalance().getCurrency().toString(),
-                    Double.parseDouble(transferAmount.getAmount().toString()));
-            Money convertedAmount = new Money(BigDecimal.valueOf(response.getConvertedAmount()),Currency.valueOf(response.getCurrency()));
-            receiverWallet.deposit(convertedAmount);
-            TransactionAmountDTO amountDTO = new TransactionAmountDTO(transferAmount,convertedAmount);
-            recordTransaction(sender,receiver,amountDTO,response.getServiceFee(),response.getBaseCurrencyServiceFee());
-        }
-        else {
-            receiverWallet.deposit(transferAmount);
-            TransactionAmountDTO amountDTO = new TransactionAmountDTO(transferAmount,transferAmount);
-            recordTransaction(sender,receiver,amountDTO,null,null);
-        }
+        grpcCurrencyConversion(sender, transferAmount, receiverWallet, receiver);
 
         walletRepository.save(receiverWallet);
         walletRepository.save(senderWallet);
         return new TransactionResponse("Transferred amount successful",senderWallet.getCurrentBalance());
-    }
-
-
-    public void recordTransaction(Users sender, Users receiver, TransactionAmountDTO transferAmount, Double serviceFee, Double serviceFeeInBaseCurrency) {
-        Transaction senderTransaction = new Transaction(TransactionType.SENT, sender.getId(), receiver.getUsername(),
-                transferAmount.getSenderAmount(),LocalDateTime.now(),serviceFeeInBaseCurrency);
-        Transaction receiverTransaction = new Transaction(TransactionType.RECEIVED, receiver.getId(), sender.getUsername(),
-                transferAmount.getReceiverAmount(),LocalDateTime.now(),serviceFee);
-        transactionRepository.save(senderTransaction);
-        transactionRepository.save(receiverTransaction);
     }
 
     @Override
@@ -92,6 +68,32 @@ public class TransactionServiceImpl implements TransactionService{
     @Override
     public List<Transaction> getTransactionHistoriesInDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
         return transactionRepository.findTransactionsByUserIdAndTimestamp(userId, startDate,endDate);
+    }
+
+
+    private void grpcCurrencyConversion(Users sender, Money transferAmount, Wallet receiverWallet, Users receiver) {
+        if(!transferAmount.getCurrency().equals(receiverWallet.getCurrentBalance().getCurrency())) {
+            ConvertResponse response = conversionClient.convertCurrency(transferAmount.getCurrency().toString(), receiverWallet.getCurrentBalance().getCurrency().toString(),
+                    Double.parseDouble(transferAmount.getAmount().toString()));
+            Money convertedAmount = new Money(BigDecimal.valueOf(response.getConvertedAmount()),Currency.valueOf(response.getCurrency()));
+            receiverWallet.deposit(convertedAmount);
+            TransactionAmountDTO amountDTO = new TransactionAmountDTO(transferAmount,convertedAmount);
+            recordTransaction(sender, receiver,amountDTO,response.getServiceFee(),response.getBaseCurrencyServiceFee());
+        }
+        else {
+            receiverWallet.deposit(transferAmount);
+            TransactionAmountDTO amountDTO = new TransactionAmountDTO(transferAmount, transferAmount);
+            recordTransaction(sender, receiver,amountDTO,null,null);
+        }
+    }
+
+    public void recordTransaction(Users sender, Users receiver, TransactionAmountDTO transferAmount, Double serviceFee, Double serviceFeeInBaseCurrency) {
+        Transaction senderTransaction = new Transaction(TransactionType.SENT, sender.getId(), receiver.getUsername(),
+                transferAmount.getSenderAmount(),LocalDateTime.now(),serviceFeeInBaseCurrency);
+        Transaction receiverTransaction = new Transaction(TransactionType.RECEIVED, receiver.getId(), sender.getUsername(),
+                transferAmount.getReceiverAmount(),LocalDateTime.now(),serviceFee);
+        transactionRepository.save(senderTransaction);
+        transactionRepository.save(receiverTransaction);
     }
 
 }
