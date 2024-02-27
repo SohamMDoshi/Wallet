@@ -8,7 +8,6 @@ import com.swiggy.wallet.dto.TransactionAmountDTO;
 import com.swiggy.wallet.dto.TransactionListDTO;
 import com.swiggy.wallet.dto.TransactionResponse;
 import com.swiggy.wallet.entity.*;
-import com.swiggy.wallet.grpcClient.CurrencyConversionClient;
 import com.swiggy.wallet.repository.TransactionRepository;
 import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.repository.WalletRepository;
@@ -21,6 +20,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.swiggy.wallet.grpcClient.CurrencyConversionClient.convertCurrency;
+
 
 @Service
 public class TransactionServiceImpl implements TransactionService {
@@ -32,13 +33,11 @@ public class TransactionServiceImpl implements TransactionService {
     private WalletRepository walletRepository;
 
     @Autowired
+    private WalletService walletService;
+
+    @Autowired
     private TransactionRepository transactionRepository;
 
-    private final CurrencyConversionClient conversionClient;
-
-    public TransactionServiceImpl(CurrencyConversionClient conversionClient) {
-        this.conversionClient = conversionClient;
-    }
 
 
     @Override
@@ -51,10 +50,7 @@ public class TransactionServiceImpl implements TransactionService {
         if (!transferAmount.getCurrency().equals(receiverWallet.getCurrentBalance().getCurrency())) {
             grpcCurrencyConversion(sender, senderWallet, transferAmount, receiverWallet, receiver);
         } else {
-            try {senderWallet.withdraw(transferAmount);
-            } catch (InsufficientBalanceException e) {throw new InsufficientBalanceException();}
-
-            receiverWallet.deposit(transferAmount);
+            walletService.transferAmount(senderWallet,receiverWallet,transferAmount);
             TransactionAmountDTO amountDTO = new TransactionAmountDTO(transferAmount, transferAmount);
             recordTransaction(sender, receiver, amountDTO, null);
         }
@@ -78,7 +74,7 @@ public class TransactionServiceImpl implements TransactionService {
 
 
     private void grpcCurrencyConversion(Users sender, Wallet senderWallet, Money transferAmount, Wallet receiverWallet, Users receiver) {
-        ConvertResponse response = conversionClient.convertCurrency(transferAmount.getCurrency().toString(), receiverWallet.getCurrentBalance().getCurrency().toString(),
+        ConvertResponse response = convertCurrency(transferAmount.getCurrency().toString(), receiverWallet.getCurrentBalance().getCurrency().toString(),
                 Double.parseDouble(transferAmount.getAmount().toString()));
 
         BigDecimal totalAmountToWithdrawFromSender = transferAmount.getAmount().add(BigDecimal.valueOf(response.getServiceFee()));

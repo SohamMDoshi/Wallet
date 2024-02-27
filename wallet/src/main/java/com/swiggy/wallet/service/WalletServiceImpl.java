@@ -1,9 +1,6 @@
 package com.swiggy.wallet.service;
 
-import com.swiggy.wallet.Expection.CurrencyMismatchException;
-import com.swiggy.wallet.Expection.InsufficientBalanceException;
-import com.swiggy.wallet.Expection.UserNotFoundException;
-import com.swiggy.wallet.Expection.WalletNotFoundException;
+import com.swiggy.wallet.Expection.*;
 import com.swiggy.wallet.entity.*;
 import com.swiggy.wallet.repository.UserRepository;
 import com.swiggy.wallet.repository.WalletRepository;
@@ -53,6 +50,14 @@ public class WalletServiceImpl implements WalletService{
     @Override
     public Set<Wallet> getAllWallets(Long userId) {
         return walletRepository.findAllWallets(userId);
+    }
+
+    @Override
+    public void transferAmount(Wallet senderWallet,Wallet receiverWallet, Money transferAmount) {
+       try{
+           senderWallet.withdraw(transferAmount);
+       }catch (InsufficientBalanceException e) {throw new InsufficientBalanceException();}
+       receiverWallet.deposit(transferAmount);
     }
 
 

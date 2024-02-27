@@ -4,6 +4,7 @@ import com.swiggy.wallet.Expection.CurrencyMismatchException;
 import com.swiggy.wallet.Expection.InvalidAmountException;
 import com.swiggy.wallet.Expection.OperationNotPossible;
 import com.swiggy.wallet.customValidation.ValidCurrencyValue;
+import com.swiggy.wallet.grpcClient.CurrencyConversionClient;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotBlank;
@@ -26,6 +27,7 @@ public class Money {
     @NotNull(message = "currency is required")
     private Currency currency;
 
+
     public Money (BigDecimal amount, Currency currency) {
         if(amount.compareTo(BigDecimal.ZERO) < 0) throw new InvalidAmountException();
         this.amount = amount;
@@ -36,8 +38,7 @@ public class Money {
         if (money.getAmount().compareTo(BigDecimal.ZERO) < 0) {
             throw new InvalidAmountException();
         }
-        if(!this.currency.equals(money.getCurrency()))
-            throw new CurrencyMismatchException(this.currency.toString());
+        if(!this.currency.equals(money.getCurrency())) throw new CurrencyMismatchException(this.currency.toString());
         this.amount = this.amount.add(money.getAmount()).setScale(2, RoundingMode.HALF_UP);
     }
 

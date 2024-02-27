@@ -8,23 +8,14 @@ import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
-@Service
 public class CurrencyConversionClient {
-    @Value("${helloGrpcServiceHost:localhost}")
-    private String helloGrpcServiceHost;
-
-    @Value("${helloGrpcServicePort:9090}")
-    private int helloGrpcServicePort;
-
-
 
     private final static Logger log = LoggerFactory.getLogger(CurrencyConversionClient.class);
 
 
-    public ConvertResponse convertCurrency(String baseCurrency, String targetCurrency, double amount) {
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(helloGrpcServiceHost, helloGrpcServicePort)
+    public static ConvertResponse convertCurrency(String baseCurrency, String targetCurrency, double amount) {
+        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 9090)
                 .usePlaintext()
                 .build();
 
