@@ -7,7 +7,6 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @ComponentScan(basePackages = {"com.swiggy.wallet"})
 public class WalletApplication {
-
 	public static void main(String[] args) {
 		SpringApplication.run(WalletApplication.class, args);
 	}
