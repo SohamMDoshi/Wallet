@@ -24,11 +24,11 @@ func init() {
 }
 
 var currencies Currency
-var serviceFeeInUSD = 0.121
+var serviceFeeInINR = 10.0
 
 func loadConversionRates() error {
 	// Load conversion rates from JSON file
-	filePath := filepath.Join("sever", "conversion_rates.json")
+	filePath := filepath.Join("server", "conversion_rates.json")
 	file, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func (s *Server) ConvertCurrency(ctx context.Context, req *ConvertRequest) (*Con
 	baseRate := currencies.Rates[req.BaseCurrency]
 	targetRate := currencies.Rates[req.TargetCurrency]
 	convertedAmount := (req.Amount / baseRate) * targetRate
-	serviceFee := math.Round((serviceFeeInUSD*baseRate)*100) / 100
+	serviceFee := math.Round((serviceFeeInINR*baseRate)*100) / 100
 
 	// Create and return response
 	res := &ConvertResponse{
